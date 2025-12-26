@@ -5,7 +5,14 @@ const upload = require('../middleware/upload');
 
 const router = express.Router();
 
-router.post('/upload/profile', upload.single('profileImage'),(req, res) => {
+router.post('/upload/profile', (req, res) => {
+  // call multer manually so we can capture multer errors and respond cleanly
+  upload.single('profileImage')(req, res, function (err) {
+    if (err) {
+      console.error('Upload error:', err);
+      return res.status(400).json({ message: err.message || 'Upload error' });
+    }
+
     console.log('FILE:', req.file);
     if (!req.file) {
       return res.status(400).json({ message: 'No file uploaded' });
@@ -15,7 +22,7 @@ router.post('/upload/profile', upload.single('profileImage'),(req, res) => {
       message: 'Upload successful',
       url: `/uploads/profile/${req.file.filename}`,
     });
-  }
-);
+  });
+});
 
 module.exports = router;

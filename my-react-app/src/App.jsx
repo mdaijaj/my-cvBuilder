@@ -26,33 +26,11 @@ function App() {
 
       {/* Protected Routes */}
       <Route element={<MainLayout />}>
-        <Route
-          path="/dashboard"
-          element={
-            <PrivateRoute>
-              <Dashboard />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/resume-builder/:id"
-          element={
-            <PrivateRoute>
-              <ResumeCard />
-            </PrivateRoute>
-          }
-        />
-         <Route
-          path="/resume-builder"
-          element={
-            <PrivateRoute>
-              <ResumeBuilder />
-            </PrivateRoute>
-          }
-        />
+        <Route path="/dashboard" element={ <PrivateRoute> <Dashboard /></PrivateRoute> }/>
+        <Route path="/resume-builder/:id" element={ <PrivateRoute> <ResumeCard /> </PrivateRoute> } />
+        <Route path="/resume-builder"  element={ <PrivateRoute><ResumeBuilder /></PrivateRoute> } />
       </Route>
 
-      
 
       {/* Default Route */}
       <Route path="/" element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} />} />

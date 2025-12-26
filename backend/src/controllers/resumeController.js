@@ -5,6 +5,8 @@ const Resume = require('../models/Resume');
 // @route   GET /api/resumes
 // @access  Private
 const getResumes = asyncHandler(async (req, res) => {
+      console.log('User ID:', req.user._id);
+
   const resumes = await Resume.find({ user: req.user._id }).sort('-updatedAt');
   res.json(resumes);
 });
@@ -26,28 +28,53 @@ const getResumeById = asyncHandler(async (req, res) => {
 // @desc    Create resume
 // @route   POST /api/resumes
 // @access  Private
+// resumeController.js
 const createResume = asyncHandler(async (req, res) => {
-  const resume = await Resume.create({
-    user: req.user._id,
-    ...req.body,
-  });
+  try {
+    console.log('Creating resume with data:', req.body);
+    console.log('User ID:', req.user._id);
+    
+    const resume = await Resume.create({
+      user: req.user._id,
+      ...req.body,
+    });
 
-  res.status(201).json(resume);
+    console.log('Resume created successfully:', resume._id);
+    res.status(201).json(resume);
+  } catch (error) {
+    console.error('Error creating resume:', error);
+    res.status(400);
+    throw new Error(`Failed to create resume: ${error.message}`);
+  }
 });
 
-// @desc    Update resume
-// @route   PUT /api/resumes/:id
-// @access  Private
 const updateResume = asyncHandler(async (req, res) => {
-  const resume = await Resume.findById(req.params.id);
+  try {
+    const resume = await Resume.findById(req.params.id);
 
-  if (resume && resume.user.toString() === req.user._id.toString()) {
+    if (!resume) {
+      res.status(404);
+      throw new Error('Resume not found');
+    }
+
+    if (resume.user.toString() !== req.user._id.toString()) {
+      res.status(403);
+      throw new Error('Not authorized to update this resume');
+    }
+
+    console.log('Updating resume with data:', req.body);
+    
     Object.assign(resume, req.body);
     const updatedResume = await resume.save();
+    
+    console.log('Resume updated successfully:', updatedResume._id);
     res.json(updatedResume);
-  } else {
-    res.status(404);
-    throw new Error('Resume not found');
+  } catch (error) {
+    console.error('Error updating resume:', error);
+    if (!res.statusCode || res.statusCode === 200) {
+      res.status(400);
+    }
+    throw new Error(`Failed to update resume: ${error.message}`);
   }
 });
 
@@ -93,7 +120,7 @@ const duplicateResume = asyncHandler(async (req, res) => {
 
 module.exports = {
   getResumes,
-  getResumeById,
+  getResumeById, 
   createResume,
   updateResume,
   deleteResume,

@@ -11,13 +11,13 @@ import {
 } from '@mui/material';
 import { Add } from '@mui/icons-material';
 import { fetchResumes } from '../../redux/slices/resumeSlice';
-import ResumeCard from './ResumeBuilder';
+import ResumeCard from './ResumeCards';
 
 const Dashboard = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { resumes, isLoading } = useSelector((state) => state.resume);
-  console.log("testing", resumes)
+  const { resumes, isLoading, error } = useSelector((state) => state.resume);
+  console.log("testing", { resumes, isLoading, error });
   const { user } = useSelector((state) => state.auth);
 
   useEffect(() => {
@@ -32,6 +32,19 @@ const Dashboard = () => {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '80vh' }}>
         <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box sx={{ textAlign: 'center', py: 8 }}>
+        <Typography variant="h6" color="error" gutterBottom>
+          Error loading resumes: {error.message || error}
+        </Typography>
+        <Button variant="contained" onClick={() => dispatch(fetchResumes())}>
+          Retry
+        </Button>
       </Box>
     );
   }
@@ -72,11 +85,11 @@ const Dashboard = () => {
       ) : (
         <Grid container spacing={3}>
           {console.log("aijajkhan", resumes)}
-          {/* {resumes.map((resume) => ( */}
-            <Grid item xs={12} sm={6} md={4} key={resumes[0]._id}>
-              <ResumeCard resume={resumes[0]} />
+          {resumes.map((resume) => (
+            <Grid item xs={12} sm={6} md={4} key={resume._id}>
+              <ResumeCard resume={resume} />
             </Grid>
-          {/* ))} */}
+          ))}
         </Grid>
       )}
     </Container>

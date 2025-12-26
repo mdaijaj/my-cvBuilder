@@ -9,7 +9,7 @@ const resumeSchema = new mongoose.Schema(
     },
     template: {
       type: String,
-      enum: ['modern', 'professional', 'minimal', 'creative'],
+      enum: ['modern', 'professional', 'minimal', 'creative', "classic"],
       default: 'modern',
     },
     personalInfo: {
@@ -22,7 +22,7 @@ const resumeSchema = new mongoose.Schema(
       linkedin: String,
       github: String,
       portfolio: String,
-    },
+  },
     summary: String,
     skills: [
       {
@@ -32,36 +32,39 @@ const resumeSchema = new mongoose.Schema(
     ],
     experience: [
       {
+        title: String,
         company: String,
-        role: String,
+        location: String,
         startDate: String,
         endDate: String,
         current: Boolean,
-        responsibilities: String,
+        description: String,
       },
     ],
     education: [
       {
         degree: String,
         institution: String,
-        year: String,
-        grade: String,
+        location: String,
+        startDate: String,
+        endDate: String,
+        description: String,
       },
     ],
     projects: [
       {
         name: String,
         description: String,
-        techStack: String,
-        github: String,
-        liveUrl: String,
+        technologies: [String],
+        link: String,
       },
     ],
     certifications: [
       {
         name: String,
         issuer: String,
-        year: String,
+        date: String,
+        link: String,
       },
     ],
   },

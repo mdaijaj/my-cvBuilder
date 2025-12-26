@@ -13,11 +13,10 @@ export const fetchResumes = createAsyncThunk(
   }
 );
 
-export const createResume = createAsyncThunk(
-  'resume/create',
-  async (data, { rejectWithValue }) => {
+export const createResume = createAsyncThunk('resume/create', async (data, { rejectWithValue }) => {
     try {
       const response = await resumeApi.createResume(data);
+      console.log("response",response)
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data || error.message);
@@ -54,33 +53,47 @@ const resumeSlice = createSlice({
   initialState: {
     resumes: [],
     currentResume: null,
-    loading: false,
+    isLoading: false,
     error: null,
   },
   reducers: {},
   extraReducers: (builder) => {
     builder
+      // Fetch Resumes
+      .addCase(fetchResumes.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchResumes.fulfilled, (state, action) => {
+        state.isLoading = false;
+        // assume API returns an array of resumes
+        state.resumes = action.payload;
+      })
+      .addCase(fetchResumes.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload || action.error?.message;
+      })
       // Create Resume
       .addCase(createResume.pending, (state) => {
-        state.loading = true;
+        state.isLoading = true;
         state.error = null;
       })
       .addCase(createResume.fulfilled, (state, action) => {
-        state.loading = false;
+        state.isLoading = false;
         state.resumes.push(action.payload);
         state.currentResume = action.payload;
       })
       .addCase(createResume.rejected, (state, action) => {
-        state.loading = false;
+        state.isLoading = false;
         state.error = action.payload;
       })
       // Update Resume
       .addCase(updateResume.pending, (state) => {
-        state.loading = true;
+        state.isLoading = true;
         state.error = null;
       })
       .addCase(updateResume.fulfilled, (state, action) => {
-        state.loading = false;
+        state.isLoading = false;
         const index = state.resumes.findIndex(r => r._id === action.payload._id);
         if (index !== -1) {
           state.resumes[index] = action.payload;
@@ -88,7 +101,7 @@ const resumeSlice = createSlice({
         state.currentResume = action.payload;
       })
       .addCase(updateResume.rejected, (state, action) => {
-        state.loading = false;
+        state.isLoading = false;
         state.error = action.payload;
       });
   },

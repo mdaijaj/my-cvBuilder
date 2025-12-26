@@ -143,6 +143,9 @@ const ResumeBuilder = () => {
 
   const handleSave = async () => {
     const stepErrors = validateStep(activeStep, resumeData);
+    console.log("activeStep", activeStep)
+    console.log("resumeData", resumeData)
+
 
     if (Object.keys(stepErrors).length > 0) {
       setErrors(stepErrors);
@@ -152,20 +155,26 @@ const ResumeBuilder = () => {
     setSaving(true);
     try {
       const payload = { ...resumeData, template: selectedTemplate };
+      console.log("payload", payload)
 
       if (id) {
-        await dispatch(updateResume({ id, data: payload }));
+        // Update existing resume
+        const result = await dispatch(updateResume({ id, data: payload })).unwrap();
+        console.log('Resume updated:', result);
+        alert('Resume saved successfully!');
       } else {
-        const result = await dispatch(createResume(payload));
-        if (result.payload?._id) {
-          navigate(`/resume-builder/${result.payload._id}`, { replace: true });
+        // Create new resume
+        const result = await dispatch(createResume(payload)).unwrap();
+        console.log('Resume created:', result);
+        
+        if (result._id) {
+          navigate(`/resume-builder/${result._id}`, { replace: true });
+          alert('Resume created successfully!');
         }
       }
-
-      alert('Resume saved successfully!');
     } catch (error) {
-      console.error(error);
-      alert('Failed to save resume');
+      console.error('Save error:', error);
+      alert(`Failed to save resume: ${error.message || 'Unknown error'}`);
     } finally {
       setSaving(false);
     }
