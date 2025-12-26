@@ -19,9 +19,6 @@ export const uploadApi = {
     console.log('📨 Response data:', apiRes.data);
     console.log('📨 Response URL field:', apiRes.data.url);
     const baseUrl="http://localhost:5000"
-    
-    // Check what base URL we're using
-    // const baseUrl = import.meta.env.VITE_API_BASE_URL;
     console.log('🌐 Base URL from env:', baseUrl);
     
     // Construct full URL

@@ -11,6 +11,9 @@ const AuthLayout = () => {
         alignItems: 'center',
         justifyContent: 'center',
         bgcolor: 'background.default',
+        position: 'relative',
+        overflow: 'hidden',
+
       }}
     >
       <Outlet />

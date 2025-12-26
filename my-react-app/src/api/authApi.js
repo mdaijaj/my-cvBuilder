@@ -2,8 +2,7 @@ import axios from './axios';
 
 export const authApi = {
   register: (data) => {
-    console.log("kkkkkkkk", data)
-    let result=axios.post('/auth/register', data)
+    let result=axios.post('/api/auth/register', data)
     console.log("ssss", result)
     return result
   },

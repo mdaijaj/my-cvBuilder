@@ -1,9 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { authApi } from '../../api/authApi';
 
-export const login = createAsyncThunk(
-  'auth/login',
-  async (credentials, { rejectWithValue }) => {
+export const login = createAsyncThunk('auth/login', async (credentials, { rejectWithValue }) => {
     try {
       const response = await authApi.login(credentials);
       localStorage.setItem('token', response.data.token);
@@ -14,9 +12,7 @@ export const login = createAsyncThunk(
   }
 );
 
-export const register = createAsyncThunk(
-  'auth/register',
-  async (userData, { rejectWithValue }) => {
+export const register = createAsyncThunk('auth/register', async (userData, { rejectWithValue }) => {
     console.log("userData", userData)
     try {
       const response = await authApi.register(userData);
@@ -29,9 +25,7 @@ export const register = createAsyncThunk(
   }
 );
 
-const authSlice = createSlice({
-  name: 'auth',
-  initialState: {
+const authSlice = createSlice({ name: 'auth',initialState: {
     user: null,
     token: localStorage.getItem('token'),
     isLoading: false,

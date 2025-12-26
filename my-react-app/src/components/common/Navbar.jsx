@@ -10,7 +10,6 @@ import {
   Menu,
   MenuItem,
   Avatar,
-  Box,
 } from '@mui/material';
 import { AccountCircle, Dashboard as DashboardIcon } from '@mui/icons-material';
 import { logout } from '../../redux/slices/authSlice';

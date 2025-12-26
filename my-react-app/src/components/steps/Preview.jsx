@@ -3,35 +3,21 @@ import '../../index.css'
 
 import {
   Box,
-  TextField,
   Typography,
   Button,
   Paper,
-  IconButton,
-  Grid,
   Divider,
   Chip,
   Stack,
-  Card,
-  CardContent,
   ButtonGroup,
   Avatar,
 } from '@mui/material';
 import {
-  Add,
-  Delete,
   Download,
-  GitHub,
-  Language,
-  CalendarToday,
-  Business,
-  School,
-  Code,
-  EmojiEvents,
 } from '@mui/icons-material';
 
 
-const PreviewStep = ({ data, selectedTemplate, onTemplateChange }) => {
+const PreviewStep = ({ data, selectedTemplate, onTemplateChange,readOnly = false }) => {
   const templates = [
     { id: 'modern', name: 'Modern' },
     { id: 'classic', name: 'Classic', color: 'success' },
@@ -115,7 +101,7 @@ const PreviewStep = ({ data, selectedTemplate, onTemplateChange }) => {
 
       {/* Resume Preview */}
       <Paper sx={{ p: 4 }} elevation={3} id="resume-print">
-        <Box sx={{ maxWidth: 900, mx: 'auto' }}>
+        <Box sx={{border: '1px solid #ddd', p: 3, borderRadius: 2, maxWidth: 900, mx: 'auto' }}>
           {/* Header with Profile Photo */}
           <Box
             sx={{

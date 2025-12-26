@@ -3,13 +3,14 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import Login from './components/auth/Login';
 import Register from './components/auth/Register';
-// import ForgotPassword from './components/auth/';
+import ForgotPassword from './components/auth/ForgetPassword';
 import Dashboard from './components/dashboard/Dashboard';
 import ResumeBuilder from './components/dashboard/ResumeBuilder';
 import PrivateRoute from './components/auth/PrivateRoute';
 import MainLayout from './components/layout/MainLayout';
 import AuthLayout from './components/layout/AuthLayout';
 import ResumeCard from './components/dashboard/ResumeCards';
+import ResumeBuilderDetails from './components/resume-builder/ResumeBuilder';
 
 function App() {
   const { isAuthenticated } = useSelector((state) => state.auth);
@@ -21,13 +22,13 @@ function App() {
       <Route element={<AuthLayout />}>
         <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to="/dashboard" />} />
         <Route path="/register" element={!isAuthenticated ? <Register /> : <Navigate to="/dashboard" />} />
-        {/* <Route path="/forgot-password" element={<ForgotPassword />} /> */}
+        <Route path="/forgot-password" element={<ForgotPassword />} />
       </Route>
 
       {/* Protected Routes */}
       <Route element={<MainLayout />}>
         <Route path="/dashboard" element={ <PrivateRoute> <Dashboard /></PrivateRoute> }/>
-        <Route path="/resume-builder/:id" element={ <PrivateRoute> <ResumeCard /> </PrivateRoute> } />
+        <Route path="/resume-builder/:id" element={ <PrivateRoute> <ResumeBuilderDetails /> </PrivateRoute> } />
         <Route path="/resume-builder"  element={ <PrivateRoute><ResumeBuilder /></PrivateRoute> } />
       </Route>
 

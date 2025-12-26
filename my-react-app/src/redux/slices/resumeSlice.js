@@ -1,9 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { resumeApi } from '../../api/resumeApi';
 
-export const fetchResumes = createAsyncThunk(
-  'resume/fetchAll',
-  async (_, { rejectWithValue }) => {
+export const fetchResumes = createAsyncThunk('resume/fetchAll', async (_, { rejectWithValue }) => {
     try {
       const response = await resumeApi.getAllResumes();
       return response.data;
@@ -24,9 +22,7 @@ export const createResume = createAsyncThunk('resume/create', async (data, { rej
   }
 );
 
-export const updateResume = createAsyncThunk(
-  'resume/update',
-  async ({ id, data }, { rejectWithValue }) => {
+export const updateResume = createAsyncThunk('resume/update', async ({ id, data }, { rejectWithValue }) => {
     try {
       const response = await resumeApi.updateResume(id, data);
       return response.data;
@@ -36,9 +32,7 @@ export const updateResume = createAsyncThunk(
   }
 );
 
-export const deleteResume = createAsyncThunk(
-  'resume/delete',
-  async (id, { rejectWithValue }) => {
+export const deleteResume = createAsyncThunk('resume/delete', async (id, { rejectWithValue }) => {
     try {
       await resumeApi.deleteResume(id);
       return id;
@@ -48,9 +42,7 @@ export const deleteResume = createAsyncThunk(
   }
 );
 
-const resumeSlice = createSlice({
-  name: 'resume',
-  initialState: {
+const resumeSlice = createSlice({name: 'resume', initialState: {
     resumes: [],
     currentResume: null,
     isLoading: false,
