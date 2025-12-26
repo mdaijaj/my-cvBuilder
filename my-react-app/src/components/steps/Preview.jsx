@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import '../../index.css'
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 import {
   Box,
@@ -54,8 +56,66 @@ const PreviewStep = ({ data, selectedTemplate, onTemplateChange,readOnly = false
     return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
   };
 
-  const handleDownload = () => {
-    window.print();
+  const handleDownload = async () => {
+    const element = document.getElementById('resume-print');
+    
+    if (!element) {
+      console.error('Resume element not found');
+      return;
+    }
+
+    try {
+      const noPrintElements = document.querySelectorAll('.no-print');
+      noPrintElements.forEach(el => {
+        el.style.display = 'none';
+      });
+
+      const resumeContent = element.querySelector('div');
+      
+      const canvas = await html2canvas(resumeContent, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+        windowWidth: resumeContent.scrollWidth,
+        windowHeight: resumeContent.scrollHeight,
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+      });
+
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = pdfWidth - 20; 
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      let heightLeft = imgHeight;
+      let position = 10; 
+
+      pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+      heightLeft -= (pdfHeight - 20); 
+
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight + 10;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+        heightLeft -= (pdfHeight - 20);
+      }
+
+      pdf.save('resume.pdf');
+
+      noPrintElements.forEach(el => {
+        el.style.display = '';
+      });
+
+    } catch (error) {
+      console.error('PDF generation error:', error);
+      alert('Failed to generate PDF. Please try again.');
+    }
   };
 
   return (

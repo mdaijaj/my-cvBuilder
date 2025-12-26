@@ -68,30 +68,81 @@ button:focus-visible {
 }
 
 @media print {
+  body {
+    margin: 0;
+    padding: 0;
+    display: block;
+    min-height: auto;
+  }
   body * {
     visibility: hidden;
   }
-
+  
   #resume-print,
   #resume-print * {
     visibility: visible;
   }
-
+  
   #resume-print {
     position: absolute;
     left: 0;
     top: 0;
     width: 100%;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+  }
+  
+  .no-print {
+    display: none !important;
+    visibility: hidden !important;
+  }
+  
+  #resume-print > div {
+    border: none !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 15mm !important;
+  }
+  
+  .MuiBox-root {
+    page-break-inside: avoid;
+  }
+  
+  /* Ensure colors are preserved */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  .MuiChip-root {
+    border: 1px solid currentColor !important;
+  }
+
+  /* Hide MUI Paper elevation styles */
+  .MuiPaper-root {
+    box-shadow: none !important;
   }
 }
 
 @page {
   size: A4;
-  margin: 20mm;
+  margin: 15mm;
 }
 
-@media print {
-  .MuiChip-root {
-    border: none !important;
-  }
+body.printing {
+  overflow: hidden;
+}
+
+body.printing > *:not(#root) {
+  display: none !important;
+}
+
+body.printing {
+  overflow: hidden;
+}
+
+body.printing > *:not(#root) {
+  display: none !important;
 }
