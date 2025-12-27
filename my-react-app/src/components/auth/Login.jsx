@@ -4,6 +4,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, Link } from 'react-router-dom';
+import { GoogleLogin } from '@react-oauth/google';
 import {
   Container,
   Box,
@@ -17,7 +18,6 @@ import {
   InputAdornment,
   IconButton,
   Divider,
-  alpha,
 } from '@mui/material';
 import {
   Email,
@@ -27,7 +27,7 @@ import {
   Login as LoginIcon,
   Description,
 } from '@mui/icons-material';
-import { login } from '../../redux/slices/authSlice';
+import { login, googleLogin } from '../../redux/slices/authSlice';
 
 const schema = yup.object({
   email: yup.string().email('Invalid email').required('Email is required'),
@@ -53,6 +53,21 @@ const Login = () => {
     if (login.fulfilled.match(result)) {
       navigate('/dashboard');
     }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    try {
+      const result = await dispatch(googleLogin(credentialResponse.credential));
+      if (googleLogin.fulfilled.match(result)) {
+        navigate('/dashboard');
+      }
+    } catch (error) {
+      console.error('Google login error:', error);
+    }
+  };
+
+  const handleGoogleError = () => {
+    console.error('Google Login Failed');
   };
 
   const handleClickShowPassword = () => {
@@ -166,6 +181,24 @@ const Login = () => {
                 {error}
               </Alert>
             )}
+
+            {/* Google Login Button */}
+            <Box sx={{ mb: 3, display: 'flex', justifyContent: 'center' }}>
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={handleGoogleError}
+                theme="outline"
+                size="large"
+                text="signin_with"
+                width="100%"
+              />
+            </Box>
+
+            <Divider sx={{ my: 3 }}>
+              <Typography variant="body2" color="text.secondary">
+                OR
+              </Typography>
+            </Divider>
 
             <form onSubmit={handleSubmit(onSubmit)}>
               <TextField

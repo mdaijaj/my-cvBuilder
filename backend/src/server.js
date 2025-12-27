@@ -6,6 +6,7 @@ const connectDB = require('./config/db');
 require("dotenv").config();
 const path = require("path")
 const fs = require('fs');
+dotenv.config();
 
 
 // Connect to database
@@ -20,7 +21,10 @@ if (!fs.existsSync(uploadsDir)) {
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: 'http://localhost:5173', // Your React app URL
+  credentials: true,
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));

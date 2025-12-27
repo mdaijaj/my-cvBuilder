@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs');
 
 const userSchema = new mongoose.Schema(
   {
-    name: {
+    username: {
       type: String,
       required: [true, 'Please add a name'],
       trim: true,
@@ -15,11 +15,28 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
     },
+    contact: {
+      type: String,
+      trim: true,
+    },
     password: {
       type: String,
-      required: [true, 'Please add a password'],
       minlength: 6,
       select: false,
+    },
+    googleId: {
+      type: String,
+      unique: true,
+      sparse: true,
+    },
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
+    authProvider: {
+      type: String,
+      enum: ['local', 'google', 'github', 'facebook'],
+      default: 'local',
     },
     resetPasswordToken: String,
     resetPasswordExpire: Date,
@@ -30,10 +47,10 @@ const userSchema = new mongoose.Schema(
 );
 
 // Hash password before saving
-userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) {
-    next();
-  }
+userSchema.pre('save', async function () {
+  if (!this.password) return;
+  if (!this.isModified('password')) return;
+
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
 });

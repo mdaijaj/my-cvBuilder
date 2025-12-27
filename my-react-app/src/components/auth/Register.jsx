@@ -28,11 +28,12 @@ import {
   HowToReg,
   Description,
   CheckCircle,
+  Phone,
 } from '@mui/icons-material';
 import { register as registerAction } from '../../redux/slices/authSlice';
 
 const schema = yup.object({
-  name: yup.string().required('Name is required').min(2, 'Name must be at least 2 characters'),
+  username: yup.string().required('Name is required').min(2, 'Name must be at least 2 characters'),
   email: yup.string().email('Invalid email').required('Email is required'),
   password: yup
     .string()
@@ -42,10 +43,9 @@ const schema = yup.object({
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
       'Password must contain at least one uppercase, one lowercase, and one number'
     ),
-  confirmPassword: yup
-    .string()
-    .oneOf([yup.ref('password')], 'Passwords must match')
-    .required('Confirm password is required'),
+  contact : yup.string()
+    .required('Contact number is required')
+    .matches(/^[0-9]{10}$/, 'Contact number must be exactly 10 digits'),
 });
 
 const Register = () => {
@@ -53,7 +53,6 @@ const Register = () => {
   const navigate = useNavigate();
   const { loading, error } = useSelector((state) => state.auth);
   const [showPassword, setShowPassword] = React.useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
 
   const {
     register,
@@ -64,7 +63,8 @@ const Register = () => {
   });
 
   const onSubmit = async (data) => {
-    const { confirmPassword, ...userData } = data;
+    console.log("Register Data:", data);
+    const {...userData } = data;
     const result = await dispatch(registerAction(userData));
     if (registerAction.fulfilled.match(result)) {
       navigate('/dashboard');
@@ -73,10 +73,6 @@ const Register = () => {
 
   const handleClickShowPassword = () => {
     setShowPassword(!showPassword);
-  };
-
-  const handleClickShowConfirmPassword = () => {
-    setShowConfirmPassword(!showConfirmPassword);
   };
 
   return (
@@ -205,11 +201,11 @@ const Register = () => {
             <form onSubmit={handleSubmit(onSubmit)}>
               <TextField
                 fullWidth
-                label="Full Name"
+                label="Username"
                 margin="normal"
-                {...register('name')}
-                error={!!errors.name}
-                helperText={errors.name?.message}
+                {...register('username')}
+                error={!!errors.username}
+                helperText={errors.username?.message}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
@@ -237,6 +233,48 @@ const Register = () => {
                       <Email color="action" />
                     </InputAdornment>
                   ),
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2,
+                  },
+                }}
+              />
+              
+              <TextField
+                fullWidth
+                label="Contact Number"
+                margin="normal"
+                {...register('contact', {
+                  required: 'Contact number is required',
+                  minLength: {
+                    value: 10,
+                    message: 'Contact number must be 10 digits',
+                  },
+                  maxLength: {
+                    value: 10,
+                    message: 'Contact number must be 10 digits',
+                  },
+                  pattern: {
+                    value: /^[0-9]{10}$/,
+                    message: 'Only numbers allowed',
+                  },
+                })}
+                error={!!errors.contactNumber}
+                helperText={errors.contactNumber?.message}
+                onInput={(e) => {
+                  e.target.value = e.target.value.replace(/[^0-9]/g, '');
+                }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Phone color="action" />
+                    </InputAdornment>
+                  ),
+                  inputProps: {
+                    maxLength: 10,
+                    inputMode: 'numeric',
+                  },
                 }}
                 sx={{
                   '& .MuiOutlinedInput-root': {
@@ -278,38 +316,6 @@ const Register = () => {
                 }}
               />
 
-              <TextField
-                fullWidth
-                label="Confirm Password"
-                type={showConfirmPassword ? 'text' : 'password'}
-                margin="normal"
-                {...register('confirmPassword')}
-                error={!!errors.confirmPassword}
-                helperText={errors.confirmPassword?.message}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Lock color="action" />
-                    </InputAdornment>
-                  ),
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        onClick={handleClickShowConfirmPassword}
-                        edge="end"
-                        size="small"
-                      >
-                        {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: 2,
-                  },
-                }}
-              />
 
               <Typography
                 variant="caption"

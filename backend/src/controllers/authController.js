@@ -4,7 +4,7 @@ const generateToken = require('../utils/generateToken');
 
 
 const register = asyncHandler(async (req, res) => {
-  const { name, email, password } = req.body;
+  const { username, email, password, contact } = req.body;
 
   const userExists = await User.findOne({ email });
 
@@ -12,7 +12,8 @@ const register = asyncHandler(async (req, res) => {
     return res.status(400).send({message: "user allready exits"})
   }
 
-  const user = await User.create({ name, email, password });
+  const user = await User.create({ username, email, password, contact });
+  console.log("user", user)
 
   const token=generateToken(user._id)
   console.log("token", token)
@@ -20,8 +21,9 @@ const register = asyncHandler(async (req, res) => {
   if (user) {
     return res.status(201).json({
       _id: user._id,
-      name: user.name,
+      username: user.username,
       email: user.email,
+      contact: user.contact
     });
   } else {
     res.status(400);
@@ -41,8 +43,9 @@ const login = asyncHandler(async (req, res) => {
   if (user && (await user.matchPassword(password))) {
     return res.json({
       _id: user._id,
-      name: user.name,
+      username: user.username,
       email: user.email,
+      contact: user.contact,
       token: token
     });
   } else {
@@ -59,8 +62,9 @@ const getProfile = asyncHandler(async (req, res) => {
   if (user) {
     res.json({
       _id: user._id,
-      name: user.name,
+      username: user.username,
       email: user.email,
+      contact: user.contact,
     });
   } else {
     res.status(404);

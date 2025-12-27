@@ -7,6 +7,7 @@ export const authApi = {
     return result
   },
   login: (data) => axios.post('/api/auth/login', data),
+  googleLogin: (credential) => axios.post('/api/auth/google', { credential }),
   forgotPassword: (email) => axios.post('/auth/forgot-password', { email }),
   resetPassword: (token, password) => axios.post('/auth/reset-password', { token, password }),
   getProfile: () => axios.get('/auth/profile'),
