@@ -1,31 +1,18 @@
 const express = require('express');
-const { uploadImage } = require('../controllers/uploadController');
 const { protect } = require('../middleware/auth');
-const upload = require('../middleware/upload');
+const { uploadProfile } = require('../controllers/uploadController');
+const { createRazorpayOrder, verifyRazorpayPayment } = require('../service/razorPayment');
 
 const router = express.Router();
 const app = express();
 app.use(express.json());
 
-router.post('/upload/profile', (req, res) => {
-  // call multer manually so we can capture multer errors and respond cleanly
-  upload.single('profileImage')(req, res, function (err) {
-    if (err) {
-      console.error('Upload error:', err);
-      return res.status(400).json({ message: err.message || 'Upload error' });
-    }
+router.post('/upload/profile', protect, uploadProfile);
 
-    console.log('FILE:', req.file);
-    if (!req.file) {
-      return res.status(400).json({ message: 'No file uploaded' });
-    }
 
-    res.json({
-      message: 'Upload successful',
-      url: `/uploads/profile/${req.file.filename}`,
-    });
-  });
-});
+//payment routes
+router.post('/api/create-razorpay-order', createRazorpayOrder);
+router.post('/api/verify-razorpay-payment', verifyRazorpayPayment);
 
 module.exports = router;
 

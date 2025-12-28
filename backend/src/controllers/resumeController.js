@@ -1,9 +1,6 @@
 const asyncHandler = require('express-async-handler');
 const Resume = require('../models/Resume');
 
-// @desc    Get all resumes for user
-// @route   GET /api/resumes
-// @access  Private
 const getResumes = asyncHandler(async (req, res) => {
       console.log('User ID:', req.user._id);
 
@@ -11,9 +8,7 @@ const getResumes = asyncHandler(async (req, res) => {
   res.json(resumes);
 });
 
-// @desc    Get single resume
-// @route   GET /api/resumes/:id
-// @access  Private
+
 const getResumeById = asyncHandler(async (req, res) => {
   const resume = await Resume.findById(req.params.id);
 
@@ -25,10 +20,7 @@ const getResumeById = asyncHandler(async (req, res) => {
   }
 });
 
-// @desc    Create resume
-// @route   POST /api/resumes
-// @access  Private
-// resumeController.js
+
 const createResume = asyncHandler(async (req, res) => {
   try {
     console.log('Creating resume with data:', req.body);
@@ -47,6 +39,7 @@ const createResume = asyncHandler(async (req, res) => {
     throw new Error(`Failed to create resume: ${error.message}`);
   }
 });
+
 
 const updateResume = asyncHandler(async (req, res) => {
   try {
@@ -78,9 +71,7 @@ const updateResume = asyncHandler(async (req, res) => {
   }
 });
 
-// @desc    Delete resume
-// @route   DELETE /api/resumes/:id
-// @access  Private
+
 const deleteResume = asyncHandler(async (req, res) => {
   const resume = await Resume.findById(req.params.id);
 
@@ -93,9 +84,7 @@ const deleteResume = asyncHandler(async (req, res) => {
   }
 });
 
-// @desc    Duplicate resume
-// @route   POST /api/resumes/:id/duplicate
-// @access  Private
+
 const duplicateResume = asyncHandler(async (req, res) => {
   const resume = await Resume.findById(req.params.id);
 

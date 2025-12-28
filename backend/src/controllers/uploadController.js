@@ -1,29 +1,25 @@
-const asyncHandler = require('express-async-handler');
-const cloudinary = require('../config/cloudinary');
+ const upload = require('../middleware/upload');
 
-// @desc    Upload image
-// @route   POST /api/upload
-// @access  Private
-const uploadImage = asyncHandler(async (req, res) => {
-  if (!req.file) {
-    res.status(400);
-    throw new Error('No file uploaded');
-  }
+ const uploadProfile = async(req, res) => {
+  // call multer manually so we can capture multer errors and respond cleanly
+  upload.single('profileImage')(req, res, function (err) {
+    if (err) {
+      console.error('Upload error:', err);
+      return res.status(400).json({ message: err.message || 'Upload error' });
+    }
 
-  try {
-    const result = await cloudinary.uploader.upload(req.file.path, {
-      folder: 'resume-builder',
-      resource_type: 'image',
-    });
+    console.log('FILE:', req.file);
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded' });
+    }
 
     res.json({
-      url: result.secure_url,
-      publicId: result.public_id,
+      message: 'Upload successful',
+      url: `/uploads/profile/${req.file.filename}`,
     });
-  } catch (error) {
-    res.status(500);
-    throw new Error('Image upload failed');
-  }
-});
+  });
+}
 
-module.exports = { uploadImage };
+module.exports = {
+    uploadProfile
+};

@@ -9,7 +9,6 @@ import ResumeBuilder from './components/dashboard/ResumeBuilder';
 import PrivateRoute from './components/auth/PrivateRoute';
 import MainLayout from './components/layout/MainLayout';
 import AuthLayout from './components/layout/AuthLayout';
-import ResumeCard from './components/dashboard/ResumeCards';
 import ResumeBuilderDetails from './components/resume-builder/ResumeBuilder';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 

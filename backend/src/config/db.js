@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 require("dotenv").config();
 
 const connectDB = async () => {
-  MONGO_URI="mongodb://localhost:27017/cv_builder"
+  const MONGO_URI = process.env.MONGO_URI;
 
   try {
     const conn = await mongoose.connect(MONGO_URI);

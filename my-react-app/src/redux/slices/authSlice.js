@@ -25,6 +25,21 @@ export const register = createAsyncThunk('auth/register', async (userData, { rej
   }
 );
 
+// New Google Login Action
+export const googleLogin = createAsyncThunk(
+  'auth/googleLogin',
+  async (credential, { rejectWithValue }) => {
+    try {
+      const response = await authApi.googleLogin(credential);
+      localStorage.setItem('token', response.data.token);
+      window.location.reload();
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || { message: 'Google login failed' });
+    }
+  }
+);
+
 const authSlice = createSlice({ name: 'auth',initialState: {
     user: null,
     token: localStorage.getItem('token'),
@@ -75,21 +90,6 @@ const authSlice = createSlice({ name: 'auth',initialState: {
       });
   },
 });
-
-// New Google Login Action
-export const googleLogin = createAsyncThunk(
-  'auth/googleLogin',
-  async (credential, { rejectWithValue }) => {
-    try {
-      const response = await authApi.googleLogin(credential);
-      localStorage.setItem('token', response.data.token);
-      window.location.reload();
-      return response.data;
-    } catch (error) {
-      return rejectWithValue(error.response?.data || { message: 'Google login failed' });
-    }
-  }
-);
 
 export const { logout, clearError } = authSlice.actions;
 export default authSlice.reducer;

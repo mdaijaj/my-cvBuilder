@@ -293,7 +293,7 @@ const PreviewStep = ({ data, selectedTemplate, onTemplateChange, readOnly = fals
           onClick={handleDownload}
           size="large"
         >
-          {isPaid ? 'Download PDF' : 'Pay ₹9 & Download'}
+          {isPaid ? 'Download PDF' : 'Pay ₹1 & Download'}
         </Button>
       </Box>
 
@@ -307,11 +307,11 @@ const PreviewStep = ({ data, selectedTemplate, onTemplateChange, readOnly = fals
         </DialogTitle>
         <DialogContent>
           <Typography variant="body1" paragraph>
-            Download your professionally formatted resume as PDF for just ₹9
+            Download your professionally formatted resume as PDF for just ₹1
           </Typography>
           <Box sx={{ bgcolor: 'grey.100', p: 2, borderRadius: 1, mb: 2 }}>
             <Typography variant="h4" color="primary" fontWeight="bold">
-              ₹9
+              ₹1
             </Typography>
             <Typography variant="body2" color="text.secondary">
               One-time payment • Instant download
@@ -344,22 +344,214 @@ const PreviewStep = ({ data, selectedTemplate, onTemplateChange, readOnly = fals
       </Dialog>
 
       {/* Template Selection */}
+          {/* Template Selection */}
       <Paper sx={{ p: 3, mb: 3 }} className="no-print">
-        <Typography variant="h6" gutterBottom>
+        <Typography variant="h6" gutterBottom sx={{ mb: 3 }}>
           Select Template
         </Typography>
-        <ButtonGroup variant="outlined" fullWidth sx={{ mt: 2 }}>
+        <Box sx={{ display: 'flex', gap: 3, justifyContent: 'center', flexWrap: 'wrap' }}>
           {templates.map((template) => (
-            <Button
+            <Paper
               key={template.id}
+              elevation={selectedTemplate === template.id ? 8 : 2}
+              sx={{
+                width: 280,
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                border: selectedTemplate === template.id ? `3px solid ${TEMPLATE_THEMES[template.id].primary}` : '1px solid #e0e0e0',
+                borderRadius: 2,
+                overflow: 'hidden',
+                '&:hover': {
+                  transform: 'translateY(-8px)',
+                  boxShadow: 6,
+                },
+              }}
               onClick={() => onTemplateChange(template.id)}
-              variant={selectedTemplate === template.id ? 'contained' : 'outlined'}
-              color={template.color}
             >
-              {template.name}
-            </Button>
+              {/* Template Preview */}
+              <Box sx={{ p: 2, bgcolor: '#f5f5f5', minHeight: 320 }}>
+                <Box sx={{ bgcolor: 'white', p: 2, borderRadius: 1, height: '100%' }}>
+                  {/* Check if it's sidebar template */}
+                  {template.id === 'sidebar' ? (
+                    // Sidebar Layout Preview
+                    <Box sx={{ display: 'flex', height: '100%', gap: 1 }}>
+                      {/* Sidebar Section */}
+                      <Box sx={{ 
+                        width: '35%', 
+                        bgcolor: TEMPLATE_THEMES[template.id].sidebarBg, 
+                        color: TEMPLATE_THEMES[template.id].sidebarText,
+                        p: 1,
+                        borderRadius: 0.5,
+                      }}>
+                        <Typography variant="h6" sx={{ fontSize: '0.85rem', fontWeight: 'bold', mb: 1 }}>
+                          John
+                        </Typography>
+                        <Typography variant="h6" sx={{ fontSize: '0.85rem', fontWeight: 'bold', mb: 1 }}>
+                          Doe
+                        </Typography>
+                        <Typography variant="caption" sx={{ fontSize: '0.55rem', display: 'block', mb: 1, opacity: 0.9 }}>
+                          A brief intro goes here.
+                        </Typography>
+                        
+                        <Box sx={{ mb: 1, mt: 1.5 }}>
+                          <Typography variant="caption" sx={{ fontSize: '0.65rem', fontWeight: 'bold', display: 'block', mb: 0.5 }}>
+                            Education
+                          </Typography>
+                          <Typography variant="caption" sx={{ fontSize: '0.5rem', display: 'block', opacity: 0.8 }}>
+                            No data provided
+                          </Typography>
+                        </Box>
+
+                        <Box sx={{ mb: 1 }}>
+                          <Typography variant="caption" sx={{ fontSize: '0.65rem', fontWeight: 'bold', display: 'block', mb: 0.5 }}>
+                            Projects
+                          </Typography>
+                          <Typography variant="caption" sx={{ fontSize: '0.5rem', display: 'block', opacity: 0.8 }}>
+                            No data provided
+                          </Typography>
+                        </Box>
+
+                        <Box>
+                          <Typography variant="caption" sx={{ fontSize: '0.65rem', fontWeight: 'bold', display: 'block', mb: 0.5 }}>
+                            Skills
+                          </Typography>
+                          <Typography variant="caption" sx={{ fontSize: '0.5rem', display: 'block', opacity: 0.8 }}>
+                            No skills provided
+                          </Typography>
+                        </Box>
+                      </Box>
+
+                      {/* Main Content Section */}
+                      <Box sx={{ flex: 1, p: 1 }}>
+                        <Box sx={{ mb: 1 }}>
+                          <Typography variant="caption" sx={{ fontSize: '0.6rem', display: 'block' }}>
+                            <strong>Email:</strong>
+                          </Typography>
+                          <Typography variant="caption" sx={{ fontSize: '0.55rem', display: 'block', color: 'text.secondary' }}>
+                            john@example.com
+                          </Typography>
+                        </Box>
+                        <Box sx={{ mb: 1 }}>
+                          <Typography variant="caption" sx={{ fontSize: '0.6rem', display: 'block' }}>
+                            <strong>Phone:</strong>
+                          </Typography>
+                          <Typography variant="caption" sx={{ fontSize: '0.55rem', display: 'block', color: 'text.secondary' }}>
+                            1234567890
+                          </Typography>
+                        </Box>
+                        <Box sx={{ mb: 1 }}>
+                          <Typography variant="caption" sx={{ fontSize: '0.6rem', display: 'block' }}>
+                            <strong>Address:</strong>
+                          </Typography>
+                          <Typography variant="caption" sx={{ fontSize: '0.55rem', display: 'block', color: 'text.secondary' }}>
+                            123 Main St, City, State - 123456
+                          </Typography>
+                        </Box>
+
+                        <Box sx={{ mt: 1.5 }}>
+                          <Typography variant="caption" sx={{ color: TEMPLATE_THEMES[template.id].primary, fontWeight: 'bold', fontSize: '0.7rem' }}>
+                            Social Profiles
+                          </Typography>
+                          <Box sx={{ height: 1, bgcolor: TEMPLATE_THEMES[template.id].divider, mb: 0.5 }} />
+                          <Typography variant="caption" sx={{ fontSize: '0.55rem', color: 'text.secondary', display: 'block' }}>
+                            No social profile provided
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </Box>
+                  ) : (
+                    // Regular Layout Preview (Modern, Classic, Creative)
+                    <>
+                      {/* Mini Header */}
+                      <Box sx={{ borderBottom: 2, borderColor: TEMPLATE_THEMES[template.id].primary, pb: 1, mb: 1.5 }}>
+                        <Typography variant="h6" sx={{ color: TEMPLATE_THEMES[template.id].primary, fontSize: '1.1rem', fontWeight: 'bold' }}>
+                          John Doe
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
+                          A brief intro goes here.
+                        </Typography>
+                      </Box>
+                      
+                      {/* Mini Contact Info */}
+                      <Box sx={{ mb: 1.5 }}>
+                        <Typography variant="caption" sx={{ fontSize: '0.65rem', display: 'block' }}>
+                          <strong>Email:</strong> john@example.com
+                        </Typography>
+                        <Typography variant="caption" sx={{ fontSize: '0.65rem', display: 'block' }}>
+                          <strong>Phone:</strong> 1234567890
+                        </Typography>
+                        <Typography variant="caption" sx={{ fontSize: '0.65rem', display: 'block' }}>
+                          <strong>Address:</strong> 123 Main St, City, State - 123456
+                        </Typography>
+                      </Box>
+
+                      {/* Mini Sections */}
+                      <Box sx={{ mb: 1 }}>
+                        <Typography variant="caption" sx={{ color: TEMPLATE_THEMES[template.id].primary, fontWeight: 'bold', fontSize: '0.75rem' }}>
+                          Education
+                        </Typography>
+                        <Box sx={{ height: 1, bgcolor: TEMPLATE_THEMES[template.id].primary, mb: 0.5 }} />
+                        <Typography variant="caption" sx={{ fontSize: '0.6rem', color: 'text.secondary', display: 'block' }}>
+                          No data provided
+                        </Typography>
+                      </Box>
+
+                      <Box sx={{ mb: 1 }}>
+                        <Typography variant="caption" sx={{ color: TEMPLATE_THEMES[template.id].primary, fontWeight: 'bold', fontSize: '0.75rem' }}>
+                          Experience
+                        </Typography>
+                        <Box sx={{ height: 1, bgcolor: TEMPLATE_THEMES[template.id].primary, mb: 0.5 }} />
+                        <Typography variant="caption" sx={{ fontSize: '0.6rem', color: 'text.secondary', display: 'block' }}>
+                          No data available
+                        </Typography>
+                      </Box>
+
+                      <Box sx={{ mb: 1 }}>
+                        <Typography variant="caption" sx={{ color: TEMPLATE_THEMES[template.id].primary, fontWeight: 'bold', fontSize: '0.75rem' }}>
+                          Projects
+                        </Typography>
+                        <Box sx={{ height: 1, bgcolor: TEMPLATE_THEMES[template.id].primary, mb: 0.5 }} />
+                        <Typography variant="caption" sx={{ fontSize: '0.6rem', color: 'text.secondary', display: 'block' }}>
+                          No data available
+                        </Typography>
+                      </Box>
+
+                      <Box>
+                        <Typography variant="caption" sx={{ color: TEMPLATE_THEMES[template.id].primary, fontWeight: 'bold', fontSize: '0.75rem' }}>
+                          Skills
+                        </Typography>
+                        <Box sx={{ height: 1, bgcolor: TEMPLATE_THEMES[template.id].primary, mb: 0.5 }} />
+                        <Typography variant="caption" sx={{ fontSize: '0.6rem', color: 'text.secondary', display: 'block' }}>
+                          No data available
+                        </Typography>
+                      </Box>
+                    </>
+                  )}
+                </Box>
+              </Box>
+
+              {/* Template Name Label */}
+              <Box 
+                sx={{ 
+                  p: 1.5, 
+                  bgcolor: selectedTemplate === template.id ? TEMPLATE_THEMES[template.id].primary : 'white',
+                  color: selectedTemplate === template.id ? 'white' : 'text.primary',
+                  textAlign: 'center',
+                  transition: 'all 0.3s ease',
+                }}
+              >
+                <Typography variant="body1" fontWeight="bold">
+                  {template.name}
+                </Typography>
+                {selectedTemplate === template.id && (
+                  <Typography variant="caption" sx={{ display: 'block', mt: 0.5 }}>
+                    ✓ Selected
+                  </Typography>
+                )}
+              </Box>
+            </Paper>
           ))}
-        </ButtonGroup>
+        </Box>
       </Paper>
 
       {/* Resume Preview */}
