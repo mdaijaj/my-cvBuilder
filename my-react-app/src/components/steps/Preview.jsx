@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import '../../index.css'
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
@@ -13,33 +13,44 @@ import {
   Stack,
   ButtonGroup,
   Avatar,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  CircularProgress,
 } from '@mui/material';
 import {
   Download,
+  Lock,
 } from '@mui/icons-material';
 
+const PreviewStep = ({ data, selectedTemplate, onTemplateChange, readOnly = false }) => {
+  const [paymentDialog, setPaymentDialog] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [isPaid, setIsPaid] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(true);
 
-const PreviewStep = ({ data, selectedTemplate, onTemplateChange,readOnly = false }) => {
   const templates = [
     { id: 'modern', name: 'Modern' },
     { id: 'classic', name: 'Classic', color: 'success' },
     { id: 'creative', name: 'Creative', color: 'secondary' },
   ];
+
   const TEMPLATE_THEMES = {
     modern: {
-      primary: '#1976d2',   // Blue
+      primary: '#1976d2',
       secondary: '#424242',
       divider: '#1976d2',
       chip: 'primary',
     },
     classic: {
-      primary: '#2e7d32',   // Green
+      primary: '#2e7d32',
       secondary: '#1b5e20',
       divider: '#2e7d32',
       chip: 'success',
     },
     creative: {
-      primary: '#9c27b0',   // Purple
+      primary: '#9c27b0',
       secondary: '#6a1b9a',
       divider: '#9c27b0',
       chip: 'secondary',
@@ -48,6 +59,27 @@ const PreviewStep = ({ data, selectedTemplate, onTemplateChange,readOnly = false
 
   const theme = TEMPLATE_THEMES[selectedTemplate] || TEMPLATE_THEMES.modern;
 
+  // Add beforeunload event listener to warn user about unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = 'You have unsaved changes. Are you sure you want to leave? Your resume data will be lost.';
+        return e.returnValue;
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [hasUnsavedChanges]);
+
+  // Mark changes as saved after successful download
+  const markAsSaved = () => {
+    setHasUnsavedChanges(false);
+  };
 
   const formatDate = (dateStr) => {
     if (!dateStr) return '';
@@ -56,7 +88,115 @@ const PreviewStep = ({ data, selectedTemplate, onTemplateChange,readOnly = false
     return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
   };
 
-  const handleDownload = async () => {
+  // Initialize Razorpay Payment
+  const initializeRazorpay = () => {
+    return new Promise((resolve) => {
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
+  // Handle Payment
+  const handlePayment = async () => {
+    setIsProcessing(true);
+    
+    // Load Razorpay script
+    const res = await initializeRazorpay();
+    if (!res) {
+      alert('Razorpay SDK failed to load. Please check your internet connection.');
+      setIsProcessing(false);
+      return;
+    }
+
+    try {
+      const response = await fetch('http://localhost:5000/api/create-razorpay-order', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount: 9,
+        }),
+      });
+
+      const orderData = await response.json();
+
+      // Razorpay options
+      const options = {
+        key: 'rzp_test_Rwsplfx5C62L66',
+        amount: orderData.amount,
+        currency: 'INR',
+        name: 'Resume Builder',
+        description: 'Download Premium Resume PDF',
+        order_id: orderData.orderId,
+        handler: function (response) {
+          console.log('Payment successful:', response);
+          setIsPaid(true);
+          setPaymentDialog(false);
+          setIsProcessing(false);
+          
+          // Verify payment on backend
+          verifyPayment(response);
+          
+          // Proceed to download
+          generatePDF();
+        },
+        prefill: {
+          name: data.personalInfo?.fullName || '',
+          email: data.personalInfo?.email || '',
+          contact: data.personalInfo?.phone || '',
+        },
+        theme: {
+          color: '#1976d2',
+        },
+        modal: {
+          ondismiss: function() {
+            setIsProcessing(false);
+            alert('Payment cancelled');
+          }
+        }
+      };
+
+      const razorpay = new window.Razorpay(options);
+      razorpay.open();
+    } catch (error) {
+      console.error('Payment initialization error:', error);
+      alert('Failed to initialize payment. Please try again.');
+      setIsProcessing(false);
+    }
+  };
+
+  // Verify payment on backend
+  const verifyPayment = async (paymentData) => {
+    try {
+      const response = await fetch('http://localhost:5000/api/verify-razorpay-payment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          razorpay_order_id: paymentData.razorpay_order_id,
+          razorpay_payment_id: paymentData.razorpay_payment_id,
+          razorpay_signature: paymentData.razorpay_signature,
+        }),
+      });
+
+      const result = await response.json();
+      
+      if (!result.success) {
+        alert('Payment verification failed. Please contact support.');
+        setIsPaid(false);
+      }
+    } catch (error) {
+      console.error('Payment verification error:', error);
+    }
+  };
+
+  // Generate PDF
+  const generatePDF = async () => {
     const element = document.getElementById('resume-print');
     
     if (!element) {
@@ -108,6 +248,9 @@ const PreviewStep = ({ data, selectedTemplate, onTemplateChange,readOnly = false
 
       pdf.save('resume.pdf');
 
+      // Mark as saved after successful download
+      markAsSaved();
+
       noPrintElements.forEach(el => {
         el.style.display = '';
       });
@@ -115,6 +258,15 @@ const PreviewStep = ({ data, selectedTemplate, onTemplateChange,readOnly = false
     } catch (error) {
       console.error('PDF generation error:', error);
       alert('Failed to generate PDF. Please try again.');
+    }
+  };
+
+  // Handle download button click
+  const handleDownload = () => {
+    if (isPaid) {
+      generatePDF();
+    } else {
+      setPaymentDialog(true);
     }
   };
 
@@ -128,17 +280,68 @@ const PreviewStep = ({ data, selectedTemplate, onTemplateChange,readOnly = false
           <Typography variant="body2" color="text.secondary">
             Review your resume and download as PDF
           </Typography>
+          {hasUnsavedChanges && (
+            <Typography variant="caption" color="warning.main" sx={{ display: 'block', mt: 0.5 }}>
+              ⚠️ Make sure to download your resume before leaving this page
+            </Typography>
+          )}
         </Box>
         <Button
           variant="contained"
-          color="success"
-          startIcon={<Download />}
+          color={isPaid ? "success" : "primary"}
+          startIcon={isPaid ? <Download /> : <Lock />}
           onClick={handleDownload}
           size="large"
         >
-          Download PDF
+          {isPaid ? 'Download PDF' : 'Pay ₹9 & Download'}
         </Button>
       </Box>
+
+      {/* Payment Dialog */}
+      <Dialog open={paymentDialog} onClose={() => !isProcessing && setPaymentDialog(false)}>
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Lock color="primary" />
+            <Typography variant="h6">Complete Payment to Download</Typography>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body1" paragraph>
+            Download your professionally formatted resume as PDF for just ₹9
+          </Typography>
+          <Box sx={{ bgcolor: 'grey.100', p: 2, borderRadius: 1, mb: 2 }}>
+            <Typography variant="h4" color="primary" fontWeight="bold">
+              ₹9
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              One-time payment • Instant download
+            </Typography>
+          </Box>
+          <Typography variant="body2" color="text.secondary">
+            ✓ High-quality PDF format
+            <br />
+            ✓ Professional templates
+            <br />
+            ✓ Secure payment via Razorpay
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button 
+            onClick={() => setPaymentDialog(false)} 
+            disabled={isProcessing}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handlePayment}
+            disabled={isProcessing}
+            startIcon={isProcessing ? <CircularProgress size={20} /> : null}
+          >
+            {isProcessing ? 'Processing...' : 'Proceed to Pay'}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Template Selection */}
       <Paper sx={{ p: 3, mb: 3 }} className="no-print">
@@ -398,6 +601,5 @@ const PreviewStep = ({ data, selectedTemplate, onTemplateChange,readOnly = false
     </Box>
   );
 };
-
 
 export default PreviewStep;

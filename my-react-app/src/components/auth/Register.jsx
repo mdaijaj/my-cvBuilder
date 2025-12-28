@@ -4,6 +4,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, Link } from 'react-router-dom';
+import ReCAPTCHA from 'react-google-recaptcha';
 import {
   Container,
   Box,
@@ -17,7 +18,6 @@ import {
   InputAdornment,
   IconButton,
   Divider,
-  Grid,
 } from '@mui/material';
 import {
   Person,
@@ -53,6 +53,12 @@ const Register = () => {
   const navigate = useNavigate();
   const { loading, error } = useSelector((state) => state.auth);
   const [showPassword, setShowPassword] = React.useState(false);
+  const [captchaValue, setCaptchaValue] = React.useState(null);
+  const [captchaError, setCaptchaError] = React.useState('');
+  const recaptchaRef = React.useRef();
+
+  // Replace with your actual reCAPTCHA site key
+  const RECAPTCHA_SITE_KEY = '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI'; // This is a test key, replace with your real key
 
   const {
     register,
@@ -62,12 +68,41 @@ const Register = () => {
     resolver: yupResolver(schema),
   });
 
+  const onCaptchaChange = (value) => {
+    setCaptchaValue(value);
+    setCaptchaError('');
+  };
+
+  const onCaptchaExpired = () => {
+    setCaptchaValue(null);
+    setCaptchaError('reCAPTCHA expired. Please verify again.');
+  };
+
   const onSubmit = async (data) => {
+    // Validate reCAPTCHA
+    if (!captchaValue) {
+      setCaptchaError('Please complete the reCAPTCHA verification');
+      return;
+    }
+
     console.log("Register Data:", data);
-    const {...userData } = data;
+    console.log("reCAPTCHA Token:", captchaValue);
+
+    const userData = { 
+      ...data, 
+      captchaToken: captchaValue 
+    };
+
     const result = await dispatch(registerAction(userData));
+    
     if (registerAction.fulfilled.match(result)) {
       navigate('/dashboard');
+    } else {
+      // Reset reCAPTCHA on error
+      if (recaptchaRef.current) {
+        recaptchaRef.current.reset();
+      }
+      setCaptchaValue(null);
     }
   };
 
@@ -79,7 +114,7 @@ const Register = () => {
     <Box
       sx={{
         minHeight: '100vh',
-        width: "196vh",
+        width: "198vh",
         display: 'flex',
         alignItems: 'center',
         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -245,23 +280,9 @@ const Register = () => {
                 fullWidth
                 label="Contact Number"
                 margin="normal"
-                {...register('contact', {
-                  required: 'Contact number is required',
-                  minLength: {
-                    value: 10,
-                    message: 'Contact number must be 10 digits',
-                  },
-                  maxLength: {
-                    value: 10,
-                    message: 'Contact number must be 10 digits',
-                  },
-                  pattern: {
-                    value: /^[0-9]{10}$/,
-                    message: 'Only numbers allowed',
-                  },
-                })}
-                error={!!errors.contactNumber}
-                helperText={errors.contactNumber?.message}
+                {...register('contact')}
+                error={!!errors.contact}
+                helperText={errors.contact?.message}
                 onInput={(e) => {
                   e.target.value = e.target.value.replace(/[^0-9]/g, '');
                 }}
@@ -316,11 +337,27 @@ const Register = () => {
                 }}
               />
 
+              {/* reCAPTCHA */}
+              <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
+                <ReCAPTCHA
+                  ref={recaptchaRef}
+                  sitekey={RECAPTCHA_SITE_KEY}
+                  onChange={onCaptchaChange}
+                  onExpired={onCaptchaExpired}
+                  theme="light"
+                />
+              </Box>
+              
+              {captchaError && (
+                <Alert severity="error" sx={{ mt: 2, borderRadius: 2 }}>
+                  {captchaError}
+                </Alert>
+              )}
 
               <Typography
                 variant="caption"
                 color="text.secondary"
-                sx={{ display: 'block', mt: 1, px: 2 }}
+                sx={{ display: 'block', mt: 2, px: 2 }}
               >
                 By signing up, you agree to our Terms of Service and Privacy Policy
               </Typography>

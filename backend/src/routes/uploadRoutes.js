@@ -4,6 +4,8 @@ const { protect } = require('../middleware/auth');
 const upload = require('../middleware/upload');
 
 const router = express.Router();
+const app = express();
+app.use(express.json());
 
 router.post('/upload/profile', (req, res) => {
   // call multer manually so we can capture multer errors and respond cleanly
@@ -26,3 +28,5 @@ router.post('/upload/profile', (req, res) => {
 });
 
 module.exports = router;
+
+
