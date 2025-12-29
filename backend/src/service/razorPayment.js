@@ -2,6 +2,11 @@
 const Razorpay = require('razorpay');
 const crypto = require('crypto');
 require('dotenv').config();
+const express = require('express');
+const app = express();
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 
 const razorpay = new Razorpay({

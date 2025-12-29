@@ -293,7 +293,7 @@ const PreviewStep = ({ data, selectedTemplate, onTemplateChange, readOnly = fals
           onClick={handleDownload}
           size="large"
         >
-          {isPaid ? 'Download PDF' : 'Pay ₹1 & Download'}
+          {isPaid ? 'Download PDF' : 'Pay ₹9 & Download'}
         </Button>
       </Box>
 
@@ -307,11 +307,11 @@ const PreviewStep = ({ data, selectedTemplate, onTemplateChange, readOnly = fals
         </DialogTitle>
         <DialogContent>
           <Typography variant="body1" paragraph>
-            Download your professionally formatted resume as PDF for just ₹1
+            Download your professionally formatted resume as PDF for just ₹9
           </Typography>
           <Box sx={{ bgcolor: 'grey.100', p: 2, borderRadius: 1, mb: 2 }}>
             <Typography variant="h4" color="primary" fontWeight="bold">
-              ₹1
+              ₹9
             </Typography>
             <Typography variant="body2" color="text.secondary">
               One-time payment • Instant download
