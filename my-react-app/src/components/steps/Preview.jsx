@@ -11,17 +11,28 @@ import {
   Divider,
   Chip,
   Stack,
-  ButtonGroup,
   Avatar,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
   CircularProgress,
+  Radio,
+  RadioGroup,
+  FormControlLabel,
+  FormControl,
+  FormLabel,
+  Alert,
+  Card,
+  CardContent,
 } from '@mui/material';
 import {
   Download,
   Lock,
+  QrCode2,
+  CreditCard,
+  AccountBalance,
+  CheckCircle,
 } from '@mui/icons-material';
 
 const PreviewStep = ({ data, selectedTemplate, onTemplateChange, readOnly = false }) => {
@@ -29,6 +40,7 @@ const PreviewStep = ({ data, selectedTemplate, onTemplateChange, readOnly = fals
   const [isProcessing, setIsProcessing] = useState(false);
   const [isPaid, setIsPaid] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(true);
+  const [paymentMethod, setPaymentMethod] = useState('upi'); // 'upi', 'card', 'netbanking'
 
   const templates = [
     { id: 'modern', name: 'Modern' },
@@ -59,7 +71,31 @@ const PreviewStep = ({ data, selectedTemplate, onTemplateChange, readOnly = fals
 
   const theme = TEMPLATE_THEMES[selectedTemplate] || TEMPLATE_THEMES.modern;
 
-  // Add beforeunload event listener to warn user about unsaved changes
+  // Payment method configurations
+  const paymentMethods = [
+    {
+      id: 'upi',
+      name: 'UPI / QR Code',
+      icon: QrCode2,
+      description: 'Google Pay, PhonePe, Paytm, BHIM UPI',
+      recommended: true,
+    },
+    {
+      id: 'card',
+      name: 'Credit / Debit Card',
+      icon: CreditCard,
+      description: 'Visa, Mastercard, RuPay, Amex',
+      recommended: false,
+    },
+    {
+      id: 'netbanking',
+      name: 'Net Banking',
+      icon: AccountBalance,
+      description: 'All major banks supported',
+      recommended: false,
+    },
+  ];
+
   useEffect(() => {
     const handleBeforeUnload = (e) => {
       if (hasUnsavedChanges) {
@@ -70,13 +106,11 @@ const PreviewStep = ({ data, selectedTemplate, onTemplateChange, readOnly = fals
     };
 
     window.addEventListener('beforeunload', handleBeforeUnload);
-
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
   }, [hasUnsavedChanges]);
 
-  // Mark changes as saved after successful download
   const markAsSaved = () => {
     setHasUnsavedChanges(false);
   };
@@ -88,7 +122,6 @@ const PreviewStep = ({ data, selectedTemplate, onTemplateChange, readOnly = fals
     return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
   };
 
-  // Initialize Razorpay Payment
   const initializeRazorpay = () => {
     return new Promise((resolve) => {
       const script = document.createElement('script');
@@ -99,77 +132,108 @@ const PreviewStep = ({ data, selectedTemplate, onTemplateChange, readOnly = fals
     });
   };
 
-  // Handle Payment
-  const handlePayment = async () => {
-    setIsProcessing(true);
+ const handlePayment = async () => {
+  setIsProcessing(true);
+  
+  const res = await initializeRazorpay();
+  if (!res) {
+    alert('Razorpay SDK failed to load. Please check your internet connection.');
+    setIsProcessing(false);
+    return;
+  }
+
+  try {
+    const response = await fetch('http://localhost:5000/api/create-razorpay-order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amount: 19 }), 
+    });
+
+    const orderData = await response.json();
+    console.log('Order Data:', orderData);
     
-    // Load Razorpay script
-    const res = await initializeRazorpay();
-    if (!res) {
-      alert('Razorpay SDK failed to load. Please check your internet connection.');
-      setIsProcessing(false);
-      return;
+    if (!orderData) {
+      throw new Error('Failed to create order');
     }
 
-    try {
-      const response = await fetch('http://localhost:5000/api/create-razorpay-order', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          amount: 9,
-        }),
-      });
-
-      const orderData = await response.json();
-
-      // Razorpay options
-      const options = {
-        key: 'rzp_test_Rwsplfx5C62L66',
-        amount: orderData.amount,
-        currency: 'INR',
-        name: 'Resume Builder',
-        description: 'Download Premium Resume PDF',
-        order_id: orderData.orderId,
-        handler: function (response) {
-          console.log('Payment successful:', response);
-          setIsPaid(true);
-          setPaymentDialog(false);
-          setIsProcessing(false);
-          
-          // Verify payment on backend
-          verifyPayment(response);
-          
-          // Proceed to download
-          generatePDF();
-        },
-        prefill: {
-          name: data.personalInfo?.fullName || '',
-          email: data.personalInfo?.email || '',
-          contact: data.personalInfo?.phone || '',
-        },
-        theme: {
-          color: '#1976d2',
-        },
-        modal: {
-          ondismiss: function() {
-            setIsProcessing(false);
-            alert('Payment cancelled');
+    // FIXED: Simplified and corrected Razorpay config
+    const options = {
+      key: orderData.key || 'rzp_test_Rwsplfx5C62L66',
+      amount: orderData.amount,
+      currency: 'INR',
+      name: 'Resume Builder',
+      description: 'Download Premium Resume PDF',
+      order_id: orderData.orderId,
+      
+      // Enable all payment methods
+      method: {
+        upi: true,
+        card: true,
+        netbanking: true,
+        wallet: true,
+      },
+      
+      // Simplified config for UPI priority
+      config: {
+        display: {
+          blocks: {
+            upi: {
+              name: 'Pay using UPI',
+              instruments: [{ method: 'upi' }]
+            },
+            other: {
+              name: 'Other Payment Methods',
+              instruments: [
+                { method: 'card' },
+                { method: 'netbanking' },
+                { method: 'wallet' }
+              ]
+            }
+          },
+          sequence: paymentMethod === 'upi' 
+            ? ['block.upi', 'block.other']
+            : ['block.other', 'block.upi'],
+          preferences: {
+            show_default_blocks: true
           }
         }
-      };
+      },
 
-      const razorpay = new window.Razorpay(options);
-      razorpay.open();
-    } catch (error) {
-      console.error('Payment initialization error:', error);
-      alert('Failed to initialize payment. Please try again.');
-      setIsProcessing(false);
-    }
-  };
+      handler: function (response) {
+        console.log('Payment successful:', response);
+        setIsPaid(true);
+        setPaymentDialog(false);
+        setIsProcessing(false);
+        verifyPayment(response);
+        generatePDF();
+      },
+      
+      prefill: {
+        name: data.personalInfo?.fullName || '',
+        email: data.personalInfo?.email || '',
+        contact: data.personalInfo?.phone || '',
+      },
+      
+      theme: { color: '#1976d2' },
+      
+      modal: {
+        ondismiss: function() {
+          setIsProcessing(false);
+        },
+        confirm_close: true,
+      },
+    };
 
-  // Verify payment on backend
+    const razorpay = new window.Razorpay(options);
+    razorpay.open();
+    
+  } catch (error) {
+    console.error('Payment error:', error);
+    alert('Failed to initialize payment. Please try again.');
+    setIsProcessing(false);
+  }
+};
+
   const verifyPayment = async (paymentData) => {
     try {
       const response = await fetch('http://localhost:5000/api/verify-razorpay-payment', {
@@ -195,7 +259,6 @@ const PreviewStep = ({ data, selectedTemplate, onTemplateChange, readOnly = fals
     }
   };
 
-  // Generate PDF
   const generatePDF = async () => {
     const element = document.getElementById('resume-print');
     
@@ -247,8 +310,6 @@ const PreviewStep = ({ data, selectedTemplate, onTemplateChange, readOnly = fals
       }
 
       pdf.save('resume.pdf');
-
-      // Mark as saved after successful download
       markAsSaved();
 
       noPrintElements.forEach(el => {
@@ -261,7 +322,6 @@ const PreviewStep = ({ data, selectedTemplate, onTemplateChange, readOnly = fals
     }
   };
 
-  // Handle download button click
   const handleDownload = () => {
     if (isPaid) {
       generatePDF();
@@ -293,42 +353,177 @@ const PreviewStep = ({ data, selectedTemplate, onTemplateChange, readOnly = fals
           onClick={handleDownload}
           size="large"
         >
-          {isPaid ? 'Download PDF' : 'Pay ₹9 & Download'}
+          {isPaid ? 'Download PDF' : 'Pay ₹19 & Download'}  {/* Changed here */}
         </Button>
       </Box>
 
-      {/* Payment Dialog */}
-      <Dialog open={paymentDialog} onClose={() => !isProcessing && setPaymentDialog(false)}>
+      {/* Enhanced Payment Dialog with UPI Selection */}
+      <Dialog 
+        open={paymentDialog} 
+        onClose={() => !isProcessing && setPaymentDialog(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: { borderRadius: 2 }
+        }}
+      >
         <DialogTitle>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Lock color="primary" />
             <Typography variant="h6">Complete Payment to Download</Typography>
           </Box>
         </DialogTitle>
+        
         <DialogContent>
           <Typography variant="body1" paragraph>
-            Download your professionally formatted resume as PDF for just ₹9
+            Download your professionally formatted resume as PDF for just ₹19
           </Typography>
-          <Box sx={{ bgcolor: 'grey.100', p: 2, borderRadius: 1, mb: 2 }}>
-            <Typography variant="h4" color="primary" fontWeight="bold">
-              ₹9
+          
+          {/* Price Display */}
+          <Box sx={{ 
+            bgcolor: 'primary.lighter', 
+            p: 3, 
+            borderRadius: 2, 
+            mb: 3,
+            textAlign: 'center',
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          }}>
+            <Typography variant="h3" sx={{ color: 'white', fontWeight: 'bold', mb: 0.5 }}>
+              ₹19  {/* Changed from ₹9 */}
             </Typography>
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.9)' }}>
               One-time payment • Instant download
             </Typography>
           </Box>
-          <Typography variant="body2" color="text.secondary">
-            ✓ High-quality PDF format
-            <br />
-            ✓ Professional templates
-            <br />
-            ✓ Secure payment via Razorpay
-          </Typography>
+
+          {/* Payment Method Selection */}
+          <FormControl component="fieldset" fullWidth sx={{ mb: 3 }}>
+            <FormLabel 
+              component="legend" 
+              sx={{ 
+                mb: 2, 
+                fontWeight: 'bold', 
+                fontSize: '1rem',
+                color: 'text.primary',
+              }}
+            >
+              Choose Payment Method
+            </FormLabel>
+            <RadioGroup
+              value={paymentMethod}
+              onChange={(e) => setPaymentMethod(e.target.value)}
+            >
+              {paymentMethods.map((method) => {
+                const IconComponent = method.icon;
+                return (
+                  <Card
+                    key={method.id}
+                    variant="outlined"
+                    sx={{
+                      mb: 1.5,
+                      cursor: 'pointer',
+                      border: 2,
+                      borderColor: paymentMethod === method.id ? 'primary.main' : 'grey.300',
+                      bgcolor: paymentMethod === method.id ? 'primary.lighter' : 'transparent',
+                      transition: 'all 0.2s',
+                      '&:hover': {
+                        bgcolor: 'grey.50',
+                        borderColor: 'primary.light',
+                      },
+                    }}
+                    onClick={() => setPaymentMethod(method.id)}
+                  >
+                    <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+                      <FormControlLabel
+                        value={method.id}
+                        control={<Radio />}
+                        label={
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, ml: 1, width: '100%' }}>
+                            <IconComponent 
+                              sx={{ 
+                                fontSize: 32, 
+                                color: paymentMethod === method.id ? 'primary.main' : 'action.active' 
+                              }} 
+                            />
+                            <Box sx={{ flex: 1 }}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Typography variant="body1" fontWeight="bold">
+                                  {method.name}
+                                </Typography>
+                                {method.recommended && (
+                                  <Chip 
+                                    label="Recommended" 
+                                    size="small" 
+                                    color="success" 
+                                    sx={{ height: 20, fontSize: '0.7rem' }}
+                                  />
+                                )}
+                              </Box>
+                              <Typography variant="caption" color="text.secondary">
+                                {method.description}
+                              </Typography>
+                            </Box>
+                          </Box>
+                        }
+                        sx={{ m: 0, width: '100%' }}
+                      />
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </RadioGroup>
+          </FormControl>
+
+          {/* Benefits Alert */}
+          <Alert 
+            severity="info" 
+            icon={<CheckCircle />}
+            sx={{ mb: 2 }}
+          >
+            <Typography variant="body2" sx={{ fontWeight: 500 }}>
+              ✓ Scan QR code with any UPI app
+              <br />
+              ✓ 100% secure payment via Razorpay
+              <br />
+              ✓ Instant download after payment
+              <br />
+              ✓ High-quality PDF format
+            </Typography>
+          </Alert>
+
+          {/* UPI Apps Info (when UPI is selected) */}
+          {paymentMethod === 'upi' && (
+            <Paper 
+              variant="outlined" 
+              sx={{ 
+                p: 2, 
+                bgcolor: 'grey.50',
+                borderRadius: 2,
+              }}
+            >
+              <Typography variant="caption" fontWeight="bold" display="block" mb={1}>
+                Supported UPI Apps:
+              </Typography>
+              <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                {['Google Pay', 'PhonePe', 'Paytm', 'BHIM', 'Amazon Pay'].map((app) => (
+                  <Chip 
+                    key={app}
+                    label={app} 
+                    size="small" 
+                    variant="outlined"
+                    sx={{ fontSize: '0.7rem' }}
+                  />
+                ))}
+              </Stack>
+            </Paper>
+          )}
         </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
+        
+        <DialogActions sx={{ p: 3, pt: 0 }}>
           <Button 
             onClick={() => setPaymentDialog(false)} 
             disabled={isProcessing}
+            sx={{ minWidth: 100 }}
           >
             Cancel
           </Button>
@@ -336,15 +531,16 @@ const PreviewStep = ({ data, selectedTemplate, onTemplateChange, readOnly = fals
             variant="contained"
             onClick={handlePayment}
             disabled={isProcessing}
-            startIcon={isProcessing ? <CircularProgress size={20} /> : null}
+            startIcon={isProcessing ? <CircularProgress size={20} color="inherit" /> : null}
+            size="large"
+            sx={{ minWidth: 180 }}
           >
-            {isProcessing ? 'Processing...' : 'Proceed to Pay'}
+            {isProcessing ? 'Processing...' : 'Proceed to Pay ₹19'}
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Template Selection */}
-          {/* Template Selection */}
       <Paper sx={{ p: 3, mb: 3 }} className="no-print">
         <Typography variant="h6" gutterBottom sx={{ mb: 3 }}>
           Select Template
@@ -368,169 +564,38 @@ const PreviewStep = ({ data, selectedTemplate, onTemplateChange, readOnly = fals
               }}
               onClick={() => onTemplateChange(template.id)}
             >
-              {/* Template Preview */}
               <Box sx={{ p: 2, bgcolor: '#f5f5f5', minHeight: 320 }}>
                 <Box sx={{ bgcolor: 'white', p: 2, borderRadius: 1, height: '100%' }}>
-                  {/* Check if it's sidebar template */}
-                  {template.id === 'sidebar' ? (
-                    // Sidebar Layout Preview
-                    <Box sx={{ display: 'flex', height: '100%', gap: 1 }}>
-                      {/* Sidebar Section */}
-                      <Box sx={{ 
-                        width: '35%', 
-                        bgcolor: TEMPLATE_THEMES[template.id].sidebarBg, 
-                        color: TEMPLATE_THEMES[template.id].sidebarText,
-                        p: 1,
-                        borderRadius: 0.5,
-                      }}>
-                        <Typography variant="h6" sx={{ fontSize: '0.85rem', fontWeight: 'bold', mb: 1 }}>
-                          John
-                        </Typography>
-                        <Typography variant="h6" sx={{ fontSize: '0.85rem', fontWeight: 'bold', mb: 1 }}>
-                          Doe
-                        </Typography>
-                        <Typography variant="caption" sx={{ fontSize: '0.55rem', display: 'block', mb: 1, opacity: 0.9 }}>
-                          A brief intro goes here.
-                        </Typography>
-                        
-                        <Box sx={{ mb: 1, mt: 1.5 }}>
-                          <Typography variant="caption" sx={{ fontSize: '0.65rem', fontWeight: 'bold', display: 'block', mb: 0.5 }}>
-                            Education
-                          </Typography>
-                          <Typography variant="caption" sx={{ fontSize: '0.5rem', display: 'block', opacity: 0.8 }}>
-                            No data provided
-                          </Typography>
-                        </Box>
+                  <Box sx={{ borderBottom: 2, borderColor: TEMPLATE_THEMES[template.id].primary, pb: 1, mb: 1.5 }}>
+                    <Typography variant="h6" sx={{ color: TEMPLATE_THEMES[template.id].primary, fontSize: '1.1rem', fontWeight: 'bold' }}>
+                      John Doe
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
+                      Software Engineer
+                    </Typography>
+                  </Box>
+                  
+                  <Box sx={{ mb: 1.5 }}>
+                    <Typography variant="caption" sx={{ fontSize: '0.65rem', display: 'block' }}>
+                      <strong>Email:</strong> john@example.com
+                    </Typography>
+                    <Typography variant="caption" sx={{ fontSize: '0.65rem', display: 'block' }}>
+                      <strong>Phone:</strong> 1234567890
+                    </Typography>
+                  </Box>
 
-                        <Box sx={{ mb: 1 }}>
-                          <Typography variant="caption" sx={{ fontSize: '0.65rem', fontWeight: 'bold', display: 'block', mb: 0.5 }}>
-                            Projects
-                          </Typography>
-                          <Typography variant="caption" sx={{ fontSize: '0.5rem', display: 'block', opacity: 0.8 }}>
-                            No data provided
-                          </Typography>
-                        </Box>
-
-                        <Box>
-                          <Typography variant="caption" sx={{ fontSize: '0.65rem', fontWeight: 'bold', display: 'block', mb: 0.5 }}>
-                            Skills
-                          </Typography>
-                          <Typography variant="caption" sx={{ fontSize: '0.5rem', display: 'block', opacity: 0.8 }}>
-                            No skills provided
-                          </Typography>
-                        </Box>
-                      </Box>
-
-                      {/* Main Content Section */}
-                      <Box sx={{ flex: 1, p: 1 }}>
-                        <Box sx={{ mb: 1 }}>
-                          <Typography variant="caption" sx={{ fontSize: '0.6rem', display: 'block' }}>
-                            <strong>Email:</strong>
-                          </Typography>
-                          <Typography variant="caption" sx={{ fontSize: '0.55rem', display: 'block', color: 'text.secondary' }}>
-                            john@example.com
-                          </Typography>
-                        </Box>
-                        <Box sx={{ mb: 1 }}>
-                          <Typography variant="caption" sx={{ fontSize: '0.6rem', display: 'block' }}>
-                            <strong>Phone:</strong>
-                          </Typography>
-                          <Typography variant="caption" sx={{ fontSize: '0.55rem', display: 'block', color: 'text.secondary' }}>
-                            1234567890
-                          </Typography>
-                        </Box>
-                        <Box sx={{ mb: 1 }}>
-                          <Typography variant="caption" sx={{ fontSize: '0.6rem', display: 'block' }}>
-                            <strong>Address:</strong>
-                          </Typography>
-                          <Typography variant="caption" sx={{ fontSize: '0.55rem', display: 'block', color: 'text.secondary' }}>
-                            123 Main St, City, State - 123456
-                          </Typography>
-                        </Box>
-
-                        <Box sx={{ mt: 1.5 }}>
-                          <Typography variant="caption" sx={{ color: TEMPLATE_THEMES[template.id].primary, fontWeight: 'bold', fontSize: '0.7rem' }}>
-                            Social Profiles
-                          </Typography>
-                          <Box sx={{ height: 1, bgcolor: TEMPLATE_THEMES[template.id].divider, mb: 0.5 }} />
-                          <Typography variant="caption" sx={{ fontSize: '0.55rem', color: 'text.secondary', display: 'block' }}>
-                            No social profile provided
-                          </Typography>
-                        </Box>
-                      </Box>
-                    </Box>
-                  ) : (
-                    // Regular Layout Preview (Modern, Classic, Creative)
-                    <>
-                      {/* Mini Header */}
-                      <Box sx={{ borderBottom: 2, borderColor: TEMPLATE_THEMES[template.id].primary, pb: 1, mb: 1.5 }}>
-                        <Typography variant="h6" sx={{ color: TEMPLATE_THEMES[template.id].primary, fontSize: '1.1rem', fontWeight: 'bold' }}>
-                          John Doe
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
-                          A brief intro goes here.
-                        </Typography>
-                      </Box>
-                      
-                      {/* Mini Contact Info */}
-                      <Box sx={{ mb: 1.5 }}>
-                        <Typography variant="caption" sx={{ fontSize: '0.65rem', display: 'block' }}>
-                          <strong>Email:</strong> john@example.com
-                        </Typography>
-                        <Typography variant="caption" sx={{ fontSize: '0.65rem', display: 'block' }}>
-                          <strong>Phone:</strong> 1234567890
-                        </Typography>
-                        <Typography variant="caption" sx={{ fontSize: '0.65rem', display: 'block' }}>
-                          <strong>Address:</strong> 123 Main St, City, State - 123456
-                        </Typography>
-                      </Box>
-
-                      {/* Mini Sections */}
-                      <Box sx={{ mb: 1 }}>
-                        <Typography variant="caption" sx={{ color: TEMPLATE_THEMES[template.id].primary, fontWeight: 'bold', fontSize: '0.75rem' }}>
-                          Education
-                        </Typography>
-                        <Box sx={{ height: 1, bgcolor: TEMPLATE_THEMES[template.id].primary, mb: 0.5 }} />
-                        <Typography variant="caption" sx={{ fontSize: '0.6rem', color: 'text.secondary', display: 'block' }}>
-                          No data provided
-                        </Typography>
-                      </Box>
-
-                      <Box sx={{ mb: 1 }}>
-                        <Typography variant="caption" sx={{ color: TEMPLATE_THEMES[template.id].primary, fontWeight: 'bold', fontSize: '0.75rem' }}>
-                          Experience
-                        </Typography>
-                        <Box sx={{ height: 1, bgcolor: TEMPLATE_THEMES[template.id].primary, mb: 0.5 }} />
-                        <Typography variant="caption" sx={{ fontSize: '0.6rem', color: 'text.secondary', display: 'block' }}>
-                          No data available
-                        </Typography>
-                      </Box>
-
-                      <Box sx={{ mb: 1 }}>
-                        <Typography variant="caption" sx={{ color: TEMPLATE_THEMES[template.id].primary, fontWeight: 'bold', fontSize: '0.75rem' }}>
-                          Projects
-                        </Typography>
-                        <Box sx={{ height: 1, bgcolor: TEMPLATE_THEMES[template.id].primary, mb: 0.5 }} />
-                        <Typography variant="caption" sx={{ fontSize: '0.6rem', color: 'text.secondary', display: 'block' }}>
-                          No data available
-                        </Typography>
-                      </Box>
-
-                      <Box>
-                        <Typography variant="caption" sx={{ color: TEMPLATE_THEMES[template.id].primary, fontWeight: 'bold', fontSize: '0.75rem' }}>
-                          Skills
-                        </Typography>
-                        <Box sx={{ height: 1, bgcolor: TEMPLATE_THEMES[template.id].primary, mb: 0.5 }} />
-                        <Typography variant="caption" sx={{ fontSize: '0.6rem', color: 'text.secondary', display: 'block' }}>
-                          No data available
-                        </Typography>
-                      </Box>
-                    </>
-                  )}
+                  <Box sx={{ mb: 1 }}>
+                    <Typography variant="caption" sx={{ color: TEMPLATE_THEMES[template.id].primary, fontWeight: 'bold', fontSize: '0.75rem' }}>
+                      Skills
+                    </Typography>
+                    <Box sx={{ height: 1, bgcolor: TEMPLATE_THEMES[template.id].primary, mb: 0.5 }} />
+                    <Typography variant="caption" sx={{ fontSize: '0.6rem', color: 'text.secondary' }}>
+                      React • Node.js • Python
+                    </Typography>
+                  </Box>
                 </Box>
               </Box>
 
-              {/* Template Name Label */}
               <Box 
                 sx={{ 
                   p: 1.5, 
@@ -598,23 +663,6 @@ const PreviewStep = ({ data, selectedTemplate, onTemplateChange, readOnly = fals
                 )}
                 {data.personalInfo?.address && (
                   <Typography variant="body2">• {data.personalInfo.address}</Typography>
-                )}
-              </Stack>
-              <Stack direction="row" spacing={2} flexWrap="wrap" sx={{ mt: 1 }}>
-                {data.personalInfo?.linkedin && (
-                  <Typography variant="body2" color="text.secondary">
-                    🔗 LinkedIn
-                  </Typography>
-                )}
-                {data.personalInfo?.github && (
-                  <Typography variant="body2" color="text.secondary">
-                    💻 GitHub
-                  </Typography>
-                )}
-                {data.personalInfo?.portfolio && (
-                  <Typography variant="body2" color="text.secondary">
-                    🌐 Portfolio
-                  </Typography>
                 )}
               </Stack>
             </Box>

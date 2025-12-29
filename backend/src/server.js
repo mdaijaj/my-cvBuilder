@@ -7,7 +7,6 @@ require("dotenv").config();
 const path = require("path")
 const fs = require('fs');
 dotenv.config();
-const crypto = require('crypto');
 
 
 // Connect to database
@@ -40,6 +39,8 @@ app.use('/uploads', express.static('uploads', {
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/resumes', require('./routes/resumeRoutes'));
 app.use('/api', require('./routes/uploadRoutes'));
+app.use('/', require('./routes/paymentRoutes'));
+
 
 
 const PORT = process.env.PORT || 5000;
